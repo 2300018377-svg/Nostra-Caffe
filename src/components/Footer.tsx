@@ -9,7 +9,7 @@ export const Footer = () => {
           <div className="text-center md:text-left">
             <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
               <Coffee className="w-8 h-8" />
-              <h3 className="text-2xl font-bold font-serif">NOSTRA KAFE</h3>
+              <h3 className="text-2xl font-bold font-serif">NOSTRA CAFFEE</h3>
             </div>
             <p className="text-primary-foreground/80 text-sm">
               Tempat ternyaman untuk menikmati kopi terbaik.

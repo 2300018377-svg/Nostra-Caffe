@@ -33,28 +33,16 @@ export const HeroSection = () => {
           isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
-        {/* Logo */}
+        {/* Brand Mark */}
         <div className="mb-8 flex justify-center">
-          <div className="relative">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden ring-4 ring-white/80 shadow-2xl animate-float">
-              <img 
-                src="https://i.ibb.co.com/HDpBzLJ4/logo.jpg" 
-                alt="NOKA Logo"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=200&h=200&fit=crop';
-                }}
-              />
-            </div>
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-              <Coffee className="w-8 h-8 text-white/80" />
-            </div>
+          <div className="relative flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/10 ring-4 ring-white/80 shadow-2xl animate-float">
+            <Coffee className="w-16 h-16 text-white" />
           </div>
         </div>
 
         {/* Title */}
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-4 tracking-tight">
-          NOSTRA KAFE
+          NOSTRA CAFFEE
         </h1>
         
         {/* Tagline */}
