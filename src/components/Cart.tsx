@@ -1,11 +1,25 @@
-import { ShoppingBag, X, Plus, Minus, Trash2, MessageCircle, Instagram, ShoppingCart, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingBag, Plus, Minus, Trash2, Instagram, ShoppingCart } from 'lucide-react';
 import { useCartContext } from '@/context/CartContext';
 import { formatPrice } from '@/data/menuData';
 import { ImageWithFallback } from './ImageWithFallback';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { CheckoutControls } from './CheckoutControls';
+import { CheckoutPayload, OrderType, PaymentMethod } from '@/types/transaction';
+import { useToast } from '@/hooks/use-toast';
 
-export const Cart = () => {
+interface CartProps {
+  onCheckout: (payload: CheckoutPayload) => void;
+}
+
+export const Cart = ({ onCheckout }: CartProps) => {
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
+  const [orderType, setOrderType] = useState<OrderType>('Dine in');
+  const [tableNumber, setTableNumber] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const { toast } = useToast();
   const {
     items,
     isOpen,
@@ -21,8 +35,58 @@ export const Cart = () => {
   } = useCartContext();
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(generateOrderSummary());
+    const message = encodeURIComponent(generateOrderSummary({
+      customerName: customerName.trim(),
+      paymentMethod,
+      orderType,
+      tableNumber: tableNumber.trim(),
+      orderNotes: orderNotes.trim(),
+    }));
     window.open(`https://wa.me/6282178695665?text=${message}`, '_blank');
+  };
+
+  const handleCheckout = () => {
+    const trimmedName = customerName.trim();
+    if (!trimmedName) {
+      toast({
+        title: 'Nama pemesan wajib diisi',
+        description: 'Masukkan nama sebelum membuat pesanan.',
+      });
+      return;
+    }
+
+    const trimmedTableNumber = tableNumber.trim();
+    if (orderType === 'Dine in' && !trimmedTableNumber) {
+      toast({
+        title: 'Nomor meja wajib diisi',
+        description: 'Masukkan nomor meja untuk pesanan dine in.',
+      });
+      return;
+    }
+
+    onCheckout({
+      customerName: trimmedName,
+      paymentMethod,
+      orderType,
+      tableNumber: orderType === 'Dine in' ? trimmedTableNumber : '',
+      orderNotes: orderNotes.trim(),
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        subtotal: item.price * item.quantity,
+      })),
+      totalItems,
+      totalPrice,
+    });
+    clearCart();
+    setCustomerName('');
+    setPaymentMethod('Cash');
+    setOrderType('Dine in');
+    setTableNumber('');
+    setOrderNotes('');
+    setIsOpen(false);
   };
 
   const handleInstagram = () => {
@@ -31,10 +95,6 @@ export const Cart = () => {
 
   const handleShopeeFood = () => {
     window.open('https://shopee.co.id/universal-link/now-food/shop/22056334', '_blank');
-  };
-
-  const handleMaps = () => {
-    window.open('https://maps.app.goo.gl/WUfsmMrnBJfntVkA9', '_blank');
   };
 
   return (
@@ -64,8 +124,8 @@ export const Cart = () => {
         className={`hidden md:block ${isShaking ? 'animate-shake' : ''}`}
       />
 
-      <SheetContent className="w-full sm:max-w-md flex flex-col">
-        <SheetHeader className="border-b pb-4">
+      <SheetContent className="flex h-dvh w-full flex-col overflow-hidden p-0 sm:max-w-md">
+        <SheetHeader className="shrink-0 border-b px-6 pb-4 pt-6 pr-12">
           <SheetTitle className="flex items-center gap-2 text-xl">
             <ShoppingBag className="w-6 h-6 text-primary" />
             Keranjang Kamu
@@ -73,7 +133,7 @@ export const Cart = () => {
         </SheetHeader>
 
         {items.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+          <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
             <ShoppingBag className="w-20 h-20 text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">
               Keranjang masih kosong
@@ -83,9 +143,9 @@ export const Cart = () => {
             </p>
           </div>
         ) : (
-          <>
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            <div className="py-4 space-y-4">
               {items.map((item) => (
                 <div 
                   key={item.id}
@@ -105,7 +165,7 @@ export const Cart = () => {
                       {item.name}
                     </h4>
                     <p className="text-primary font-semibold">
-                      {formatPrice(item.price)}
+                      {formatPrice(item.price * item.quantity)}
                     </p>
                     
                     <div className="flex items-center gap-2 mt-2">
@@ -146,36 +206,40 @@ export const Cart = () => {
                 </span>
               </div>
 
+              <CheckoutControls
+                idPrefix="mobile-checkout"
+                customerName={customerName}
+                setCustomerName={setCustomerName}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                orderType={orderType}
+                setOrderType={setOrderType}
+                tableNumber={tableNumber}
+                setTableNumber={setTableNumber}
+                orderNotes={orderNotes}
+                setOrderNotes={setOrderNotes}
+                onCheckout={handleCheckout}
+                onWhatsApp={handleWhatsApp}
+                disabled={items.length === 0}
+              />
+
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <Button 
-                  onClick={handleWhatsApp}
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  WhatsApp
-                </Button>
-                <Button 
                   onClick={handleInstagram}
-                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white"
+                  size="sm"
+                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white px-2 text-xs"
                 >
                   <Instagram className="w-5 h-5 mr-2" />
                   Instagram
                 </Button>
                 <Button 
                   onClick={handleShopeeFood}
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  size="sm"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-2 text-xs"
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  Shopee Food
-                </Button>
-                <Button 
-                  onClick={handleMaps}
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10"
-                >
-                  <MapPin className="w-5 h-5 mr-2" />
-                  Lokasi
+                  Shopee
                 </Button>
               </div>
 
@@ -189,7 +253,7 @@ export const Cart = () => {
                 Kosongkan Keranjang
               </Button>
             </div>
-          </>
+          </div>
         )}
       </SheetContent>
     </Sheet>

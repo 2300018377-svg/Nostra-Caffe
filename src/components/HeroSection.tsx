@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Coffee } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const HeroSection = () => {
@@ -15,6 +16,12 @@ export const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <div className="absolute right-4 top-4 z-20">
+        <Button asChild variant="outline" size="sm" className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white">
+          <Link to="/admin">Admin/Kasir</Link>
+        </Button>
+      </div>
+
       {/* Background Image with Parallax */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat parallax"
@@ -35,14 +42,16 @@ export const HeroSection = () => {
       >
         {/* Brand Mark */}
         <div className="mb-8 flex justify-center">
-          <div className="relative flex items-center justify-center w-32 h-32 md:w-40 md:h-40 rounded-full bg-white/10 ring-4 ring-white/80 shadow-2xl animate-float">
-            <Coffee className="w-16 h-16 text-white" />
-          </div>
+          <img
+            src="/logo-nostra.png"
+            alt="Logo Nostra-Caffe"
+            className="h-32 w-32 rounded-full object-cover ring-4 ring-white/80 shadow-2xl md:h-40 md:w-40"
+          />
         </div>
 
         {/* Title */}
         <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-4 tracking-tight">
-          NOSTRA CAFFEE
+          Nostra-Caffe
         </h1>
         
         {/* Tagline */}
@@ -62,12 +71,6 @@ export const HeroSection = () => {
         </Button>
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-1">
-          <div className="w-1.5 h-3 bg-white/70 rounded-full animate-pulse" />
-        </div>
-      </div>
     </section>
   );
 };

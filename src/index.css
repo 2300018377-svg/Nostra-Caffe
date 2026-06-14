@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -36,13 +36,13 @@
 
     --radius: 0.75rem;
 
-    /* Custom NOKA Variables */
-    --noka-deep-blue: 220 60% 25%;
-    --noka-navy: 220 50% 15%;
-    --noka-gold: 38 80% 55%;
-    --noka-cream: 40 30% 96%;
-    --noka-glass: 0 0% 100%;
-    --noka-glass-opacity: 0.85;
+    /* Custom brand variables */
+    --brand-deep-blue: 220 60% 25%;
+    --brand-navy: 220 50% 15%;
+    --brand-gold: 38 80% 55%;
+    --brand-cream: 40 30% 96%;
+    --brand-glass: 0 0% 100%;
+    --brand-glass-opacity: 0.85;
 
     /* Gradients */
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 0% / 0.6) 0%, hsl(0 0% 0% / 0.4) 100%);

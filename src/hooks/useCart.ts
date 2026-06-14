@@ -1,8 +1,17 @@
 import { useState, useCallback } from 'react';
 import { MenuItem } from '@/data/menuData';
+import { OrderType, PaymentMethod } from '@/types/transaction';
 
 export interface CartItem extends MenuItem {
   quantity: number;
+}
+
+export interface OrderSummaryDetails {
+  customerName?: string;
+  paymentMethod?: PaymentMethod;
+  orderType?: OrderType;
+  tableNumber?: string;
+  orderNotes?: string;
 }
 
 export const useCart = () => {
@@ -13,7 +22,7 @@ export const useCart = () => {
     setItems(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) {
-        return prev.map(i => 
+        return prev.map(i =>
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
         );
       }
@@ -30,7 +39,7 @@ export const useCart = () => {
       removeItem(itemId);
       return;
     }
-    setItems(prev => 
+    setItems(prev =>
       prev.map(i => i.id === itemId ? { ...i, quantity } : i)
     );
   }, [removeItem]);
@@ -42,12 +51,18 @@ export const useCart = () => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const generateOrderSummary = () => {
-    const orderLines = items.map(item => 
-      `• ${item.name} x${item.quantity} = ${item.price * item.quantity}K`
+  const generateOrderSummary = (details: OrderSummaryDetails = {}) => {
+    const orderLines = items.map(item =>
+      `- ${item.name} x${item.quantity} = ${item.price * item.quantity}K`
     ).join('\n');
-    
-    return `🛒 *PESANAN NOKA*\n\n${orderLines}\n\n💰 *Total: ${totalPrice}K*`;
+    const detailLines = [
+      details.customerName ? `Nama: ${details.customerName}` : null,
+      details.orderType ? `Tipe: ${details.orderType}${details.tableNumber ? ` - Meja ${details.tableNumber}` : ''}` : null,
+      details.paymentMethod ? `Pembayaran: ${details.paymentMethod}` : null,
+      details.orderNotes ? `Catatan: ${details.orderNotes}` : null,
+    ].filter(Boolean).join('\n');
+
+    return `*PESANAN Nostra-Caffe*\n\n${detailLines ? `${detailLines}\n\n` : ''}${orderLines}\n\n*Total: ${totalPrice}K*`;
   };
 
   return {

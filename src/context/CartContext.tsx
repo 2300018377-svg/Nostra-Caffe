@@ -1,5 +1,5 @@
-import { createContext, useContext, ReactNode, useRef, useCallback } from 'react';
-import { useCart, CartItem } from '@/hooks/useCart';
+import { createContext, useContext, ReactNode, useRef, useCallback, useState } from 'react';
+import { useCart, CartItem, OrderSummaryDetails } from '@/hooks/useCart';
 import { MenuItem } from '@/data/menuData';
 
 interface CartContextType {
@@ -12,7 +12,7 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
-  generateOrderSummary: () => string;
+  generateOrderSummary: (details?: OrderSummaryDetails) => string;
   cartIconRef: React.RefObject<HTMLDivElement>;
   triggerShake: () => void;
   isShaking: boolean;
@@ -36,8 +36,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     </CartContext.Provider>
   );
 };
-
-import { useState } from 'react';
 
 export const useCartContext = () => {
   const context = useContext(CartContext);

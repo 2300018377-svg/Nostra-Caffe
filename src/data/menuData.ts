@@ -6,6 +6,7 @@ export interface MenuItem {
   image: string;
   category: string;
   fallbackKeyword: string;
+  available?: boolean;
 }
 
 export interface Category {
@@ -16,15 +17,15 @@ export interface Category {
 
 export const categories: Category[] = [
   { id: 'all', name: 'Semua', fallbackKeyword: 'espresso' },
-  { id: 'coffee', name: 'Coffee Based', fallbackKeyword: 'espresso' },
-  { id: 'milk', name: 'Milk Based', fallbackKeyword: 'milkshake' },
-  { id: 'tea', name: 'Espresso & Tea', fallbackKeyword: 'ice tea' },
-  { id: 'bites', name: 'Lite Bites', fallbackKeyword: 'fries' },
+  { id: 'coffee', name: 'Berbasis Kopi', fallbackKeyword: 'espresso' },
+  { id: 'milk', name: 'Berbasis Susu', fallbackKeyword: 'milkshake' },
+  { id: 'tea', name: 'Espresso & Teh', fallbackKeyword: 'ice tea' },
+  { id: 'bites', name: 'Camilan', fallbackKeyword: 'fries' },
   { id: 'signature', name: 'Signature & Yakult', fallbackKeyword: 'cocktail' },
 ];
 
 export const menuItems: MenuItem[] = [
-  // COFFEE BASED
+  // BERBASIS KOPI
   { id: 'c1', name: 'Kopi Niscala Noka', description: 'Espresso, Magic Milk Noka', price: 20, image: 'https://i.ibb.co.com/Jj0hNf2g/niscala-noka.jpg', category: 'coffee', fallbackKeyword: 'espresso' },
   { id: 'c2', name: 'Kopi Alaya Noka', description: 'Espresso, Magic Milk, Palm Sugar', price: 22, image: 'https://i.ibb.co.com/HpCLVp6V/alaya.jpg', category: 'coffee', fallbackKeyword: 'espresso' },
   { id: 'c3', name: 'Kopi Arum', price: 25, image: 'https://i.ibb.co.com/GQtBz6hV/arum.jpg', category: 'coffee', fallbackKeyword: 'espresso' },
@@ -35,7 +36,7 @@ export const menuItems: MenuItem[] = [
   { id: 'c8', name: 'Kopi Susu Pandan', price: 23, image: 'https://i.ibb.co.com/S4h2svbQ/susu-pandan.jpg', category: 'coffee', fallbackKeyword: 'espresso' },
   { id: 'c9', name: 'Kopi Nutella', price: 28, image: 'https://i.ibb.co.com/QFLCLyWf/nutella.jpg', category: 'coffee', fallbackKeyword: 'espresso' },
 
-  // MILK BASED
+  // BERBASIS SUSU
   { id: 'm1', name: 'Hazelnut Milk', price: 18, image: 'https://i.ibb.co.com/35frg6zw/hazelnute.jpg', category: 'milk', fallbackKeyword: 'milkshake' },
   { id: 'm2', name: 'Noka Redvelvet', price: 26, image: 'https://i.ibb.co.com/pvvSBKYj/hazelnute.jpg', category: 'milk', fallbackKeyword: 'milkshake' },
   { id: 'm3', name: 'Greentea Machiatto', price: 28, image: 'https://i.ibb.co.com/KjJRymhV/green-tea.jpg', category: 'milk', fallbackKeyword: 'milkshake' },
@@ -57,7 +58,7 @@ export const menuItems: MenuItem[] = [
   { id: 't8', name: 'Milk Tea', price: 18, image: 'https://i.ibb.co.com/ZzPrtvTh/milk-tea.jpg', category: 'tea', fallbackKeyword: 'ice tea' },
   { id: 't9', name: 'Mineral Water', price: 4, image: 'https://i.ibb.co.com/207mkYg4/pouring-water-from-plastic-bottle.jpg', category: 'tea', fallbackKeyword: 'ice tea' },
 
-  // LITE BITES
+  // CAMILAN
   { id: 'b1', name: 'French Fries', price: 22, image: 'https://i.ibb.co.com/DHqj6PxQ/top-view-delicious-fries-sauce.jpg', category: 'bites', fallbackKeyword: 'fries' },
   { id: 'b2', name: 'Mix Platter', price: 25, image: 'https://i.ibb.co.com/CpMJkPqx/platter.jpg', category: 'bites', fallbackKeyword: 'fries' },
   { id: 'b3', name: 'Toasted Toast', price: 15, image: 'https://i.ibb.co.com/LDtBSrsd/toasty.jpg', category: 'bites', fallbackKeyword: 'fries' },

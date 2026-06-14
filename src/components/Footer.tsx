@@ -1,4 +1,5 @@
-import { Coffee, Instagram, MapPin, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Instagram, MapPin, MessageCircle } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -8,8 +9,8 @@ export const Footer = () => {
           {/* Logo & Tagline */}
           <div className="text-center md:text-left">
             <div className="flex items-center gap-3 justify-center md:justify-start mb-2">
-              <Coffee className="w-8 h-8" />
-              <h3 className="text-2xl font-bold font-serif">NOSTRA CAFFEE</h3>
+              <img src="/logo-nostra.png" alt="Logo Nostra-Caffe" className="h-10 w-10 rounded-full object-cover bg-white" />
+              <h3 className="text-2xl font-bold font-serif">Nostra-Caffe</h3>
             </div>
             <p className="text-primary-foreground/80 text-sm">
               Tempat ternyaman untuk menikmati kopi terbaik.
@@ -18,6 +19,12 @@ export const Footer = () => {
 
           {/* Social Links */}
           <div className="flex items-center gap-4">
+            <Link
+              to="/admin"
+              className="rounded-full bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/20 transition-colors"
+            >
+              Admin/Kasir
+            </Link>
             <a
               href="https://wa.me/6282178695665"
               target="_blank"
@@ -50,7 +57,7 @@ export const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-white/20 text-center">
           <p className="text-primary-foreground/60 text-sm">
-            © 2026 NOKA (Nostra Kafe). Semua hak dilindungi.
+            Hak Cipta 2026 Nostra-Caffe. Semua hak dilindungi.
           </p>
         </div>
       </div>

@@ -1,10 +1,24 @@
-import { ShoppingBag, Plus, Minus, Trash2, MessageCircle, Instagram, ShoppingCart, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { ShoppingBag, Plus, Minus, Trash2, Instagram, ShoppingCart } from 'lucide-react';
 import { useCartContext } from '@/context/CartContext';
 import { formatPrice } from '@/data/menuData';
 import { ImageWithFallback } from './ImageWithFallback';
 import { Button } from '@/components/ui/button';
+import { CheckoutControls } from './CheckoutControls';
+import { CheckoutPayload, OrderType, PaymentMethod } from '@/types/transaction';
+import { useToast } from '@/hooks/use-toast';
 
-export const DesktopCart = () => {
+interface DesktopCartProps {
+  onCheckout: (payload: CheckoutPayload) => void;
+}
+
+export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
+  const [orderType, setOrderType] = useState<OrderType>('Dine in');
+  const [tableNumber, setTableNumber] = useState('');
+  const [orderNotes, setOrderNotes] = useState('');
+  const { toast } = useToast();
   const {
     items,
     removeItem,
@@ -18,8 +32,57 @@ export const DesktopCart = () => {
   } = useCartContext();
 
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(generateOrderSummary());
+    const message = encodeURIComponent(generateOrderSummary({
+      customerName: customerName.trim(),
+      paymentMethod,
+      orderType,
+      tableNumber: tableNumber.trim(),
+      orderNotes: orderNotes.trim(),
+    }));
     window.open(`https://wa.me/6282178695665?text=${message}`, '_blank');
+  };
+
+  const handleCheckout = () => {
+    const trimmedName = customerName.trim();
+    if (!trimmedName) {
+      toast({
+        title: 'Nama pemesan wajib diisi',
+        description: 'Masukkan nama sebelum membuat pesanan.',
+      });
+      return;
+    }
+
+    const trimmedTableNumber = tableNumber.trim();
+    if (orderType === 'Dine in' && !trimmedTableNumber) {
+      toast({
+        title: 'Nomor meja wajib diisi',
+        description: 'Masukkan nomor meja untuk pesanan dine in.',
+      });
+      return;
+    }
+
+    onCheckout({
+      customerName: trimmedName,
+      paymentMethod,
+      orderType,
+      tableNumber: orderType === 'Dine in' ? trimmedTableNumber : '',
+      orderNotes: orderNotes.trim(),
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        subtotal: item.price * item.quantity,
+      })),
+      totalItems,
+      totalPrice,
+    });
+    clearCart();
+    setCustomerName('');
+    setPaymentMethod('Cash');
+    setOrderType('Dine in');
+    setTableNumber('');
+    setOrderNotes('');
   };
 
   const handleInstagram = () => {
@@ -30,13 +93,9 @@ export const DesktopCart = () => {
     window.open('https://shopee.co.id/universal-link/now-food/shop/22056334', '_blank');
   };
 
-  const handleMaps = () => {
-    window.open('https://maps.app.goo.gl/WUfsmMrnBJfntVkA9', '_blank');
-  };
-
   return (
-    <aside className="hidden lg:block w-96 h-screen sticky top-0 border-l border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
-      <div className="h-full flex flex-col p-6">
+    <aside className="hidden lg:block w-96 h-dvh sticky top-0 border-l border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
+      <div className="flex h-full min-h-0 flex-col p-6">
         {/* Header */}
         <div 
           ref={cartIconRef}
@@ -62,9 +121,9 @@ export const DesktopCart = () => {
             </p>
           </div>
         ) : (
-          <>
+          <div className="min-h-0 flex-1 overflow-y-auto -mx-2 px-2 pb-6">
             {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto py-4 space-y-3 -mx-2 px-2">
+            <div className="py-4 space-y-3">
               {items.map((item) => (
                 <div 
                   key={item.id}
@@ -125,20 +184,29 @@ export const DesktopCart = () => {
                 </span>
               </div>
 
+              <CheckoutControls
+                idPrefix="desktop-checkout"
+                customerName={customerName}
+                setCustomerName={setCustomerName}
+                paymentMethod={paymentMethod}
+                setPaymentMethod={setPaymentMethod}
+                orderType={orderType}
+                setOrderType={setOrderType}
+                tableNumber={tableNumber}
+                setTableNumber={setTableNumber}
+                orderNotes={orderNotes}
+                setOrderNotes={setOrderNotes}
+                onCheckout={handleCheckout}
+                onWhatsApp={handleWhatsApp}
+                disabled={items.length === 0}
+              />
+
               {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-2">
                 <Button 
-                  onClick={handleWhatsApp}
-                  size="sm"
-                  className="bg-green-500 hover:bg-green-600 text-white"
-                >
-                  <MessageCircle className="w-4 h-4 mr-1" />
-                  WhatsApp
-                </Button>
-                <Button 
                   onClick={handleInstagram}
                   size="sm"
-                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white"
+                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white px-2 text-xs"
                 >
                   <Instagram className="w-4 h-4 mr-1" />
                   Instagram
@@ -146,19 +214,10 @@ export const DesktopCart = () => {
                 <Button 
                   onClick={handleShopeeFood}
                   size="sm"
-                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-2 text-xs"
                 >
                   <ShoppingCart className="w-4 h-4 mr-1" />
-                  Shopee Food
-                </Button>
-                <Button 
-                  onClick={handleMaps}
-                  size="sm"
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10"
-                >
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Lokasi
+                  Shopee
                 </Button>
               </div>
 
@@ -173,7 +232,7 @@ export const DesktopCart = () => {
                 Kosongkan
               </Button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </aside>

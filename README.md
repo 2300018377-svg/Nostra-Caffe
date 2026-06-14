@@ -1,6 +1,6 @@
-# Nostra Kafe Hub
+# Nostra-Caffe
 
-A simple React + Vite web application with a clean menu interface and modern Tailwind styling.
+Sistem pemesanan dan pengelolaan transaksi sederhana untuk Nostra-Caffe. Aplikasi ini menyediakan halaman customer untuk memilih menu dan checkout, serta dashboard admin/kasir untuk memantau transaksi, status pembayaran, status pesanan, laporan harian, dan pengelolaan menu.
 
 ## Project setup
 
@@ -17,6 +17,12 @@ npm run dev
 - `npm run build` creates a production build
 - `npm run preview` serves the built output locally
 
+## Main routes
+
+- `/` halaman customer/menu
+- `/admin` dashboard admin/kasir
+- `/nota/:transactionId` halaman nota transaksi untuk cetak, simpan PDF via print browser, dan bagikan ke WhatsApp
+
 ## Technologies used
 
 - Vite
@@ -27,4 +33,4 @@ npm run dev
 
 ## Notes
 
-This project is made and maintained locally. Edit files directly in your editor and commit changes as needed.
+Data transaksi dan menu tersimpan di localStorage browser karena project ini belum memakai backend/database.
