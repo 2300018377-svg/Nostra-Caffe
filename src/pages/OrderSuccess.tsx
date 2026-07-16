@@ -127,19 +127,18 @@ const OrderSuccess = () => {
           <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Status Pemrosesan Pesanan</h3>
           
           <div className="relative flex items-center justify-between px-2">
-            {/* Background line */}
-            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-muted -z-0" />
-            
-            {/* Progress line */}
-            <div 
-              className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-primary transition-all duration-500 -z-0 animate-none"
-              style={{
-                width: 
-                  transaction.orderStatus === 'Menunggu' ? '0%' :
-                  transaction.orderStatus === 'Diproses' ? '50%' :
-                  transaction.orderStatus === 'Selesai' ? '100%' : '0%'
-              }}
-            />
+            {/* Background line and Progress bar container */}
+            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-muted -z-0 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-500 animate-none"
+                style={{
+                  width: 
+                    transaction.orderStatus === 'Menunggu' ? '0%' :
+                    transaction.orderStatus === 'Diproses' ? '50%' :
+                    transaction.orderStatus === 'Selesai' ? '100%' : '0%'
+                }}
+              />
+            </div>
 
             {/* Steppers */}
             {/* Step 1: Menunggu */}
