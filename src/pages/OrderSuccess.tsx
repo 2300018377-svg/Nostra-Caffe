@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/data/menuData';
 import { getTransactions } from '@/lib/storage';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Transaction } from '@/types/transaction';
 
 const formatDateTime = (value: string) => {
   return new Intl.DateTimeFormat('id-ID', {
@@ -14,9 +17,42 @@ const formatDateTime = (value: string) => {
 
 const OrderSuccess = () => {
   const { transactionId } = useParams();
-  const transaction = useMemo(() => {
-    return getTransactions().find((item) => item.id === transactionId);
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!transactionId) return;
+
+    // Check local storage first
+    const localTx = getTransactions().find((item) => item.id === transactionId);
+    if (localTx) {
+      setTransaction(localTx);
+      setLoading(false);
+    }
+
+    const docRef = doc(db, 'transactions', transactionId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTransaction(docSnap.data() as Transaction);
+      }
+      setLoading(false);
+    }, () => {
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [transactionId]);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Memuat data pesanan...</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!transaction) {
     return (

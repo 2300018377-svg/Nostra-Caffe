@@ -102,7 +102,7 @@ export const Cart = ({ onCheckout }: CartProps) => {
       <SheetTrigger asChild>
         <div
           ref={cartIconRef}
-          className={`fixed bottom-6 right-6 z-50 md:hidden ${isShaking ? 'animate-shake' : ''}`}
+          className={`fixed bottom-6 right-6 z-50 lg:hidden ${isShaking ? 'animate-shake' : ''}`}
         >
           <button
             className="btn-accent w-16 h-16 rounded-full shadow-xl flex items-center justify-center relative"
@@ -121,7 +121,7 @@ export const Cart = ({ onCheckout }: CartProps) => {
       {/* Desktop Cart Icon in Header */}
       <div
         ref={cartIconRef}
-        className={`hidden md:block ${isShaking ? 'animate-shake' : ''}`}
+        className={`hidden lg:block ${isShaking ? 'animate-shake' : ''}`}
       />
 
       <SheetContent className="flex h-dvh w-full flex-col overflow-hidden p-0 sm:max-w-md">

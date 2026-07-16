@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartProvider } from '@/context/CartContext';
 import { HeroSection } from '@/components/HeroSection';
@@ -8,15 +8,20 @@ import { Cart } from '@/components/Cart';
 import { DesktopCart } from '@/components/DesktopCart';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { addTransaction, getMenuItems, StoredMenuItem } from '@/lib/storage';
+import { addTransaction, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
 import { CheckoutPayload, Transaction } from '@/types/transaction';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
-  const [menuItems] = useState<StoredMenuItem[]>(() => getMenuItems());
+  const [menuItems, setMenuItems] = useState<StoredMenuItem[]>(() => getMenuItems());
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = subscribeToMenuItems(setMenuItems);
+    return () => unsubscribe();
+  }, []);
 
   const handleCheckout = (payload: CheckoutPayload) => {
     const transaction: Transaction = {

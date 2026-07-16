@@ -1,5 +1,7 @@
 import { MenuItem, menuItems } from '@/data/menuData';
 import { Transaction } from '@/types/transaction';
+import { collection, doc, setDoc, updateDoc, deleteDoc, writeBatch, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const MENU_STORAGE_KEY = 'nostra-caffe-menu-items';
 const TRANSACTION_STORAGE_KEY = 'nostra-caffe-transactions';
@@ -56,8 +58,27 @@ export const getMenuItems = (): StoredMenuItem[] => {
   return defaults;
 };
 
-export const saveMenuItems = (items: StoredMenuItem[]) => {
+export const saveMenuItems = async (items: StoredMenuItem[]) => {
+  const currentItems = getMenuItems();
+  const nextItemIds = new Set(items.map(item => item.id));
+  const deletedItems = currentItems.filter(item => !nextItemIds.has(item.id));
+
   writeJson(MENU_STORAGE_KEY, items.map(normalizeMenuItem));
+
+  try {
+    const batch = writeBatch(db);
+    items.forEach((item) => {
+      const docRef = doc(db, 'menuItems', item.id);
+      batch.set(docRef, normalizeMenuItem(item));
+    });
+    deletedItems.forEach((item) => {
+      const docRef = doc(db, 'menuItems', item.id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error('Error syncing menu items to Firestore:', error);
+  }
 };
 
 export const resetMenuItems = () => {
@@ -70,14 +91,40 @@ export const getTransactions = (): Transaction[] => {
   return readJson<Transaction[]>(TRANSACTION_STORAGE_KEY, []).map(normalizeTransaction);
 };
 
-export const saveTransactions = (transactions: Transaction[]) => {
+export const saveTransactions = async (transactions: Transaction[]) => {
+  const currentTransactions = getTransactions();
+  const nextIds = new Set(transactions.map(t => t.id));
+  const deletedTransactions = currentTransactions.filter(t => !nextIds.has(t.id));
+
   writeJson(TRANSACTION_STORAGE_KEY, transactions.map(normalizeTransaction));
+
+  try {
+    const batch = writeBatch(db);
+    transactions.forEach((transaction) => {
+      const docRef = doc(db, 'transactions', transaction.id);
+      batch.set(docRef, normalizeTransaction(transaction));
+    });
+    deletedTransactions.forEach((transaction) => {
+      const docRef = doc(db, 'transactions', transaction.id);
+      batch.delete(docRef);
+    });
+    await batch.commit();
+  } catch (error) {
+    console.error('Error saving transactions to Firestore:', error);
+  }
 };
 
 export const addTransaction = (transaction: Transaction) => {
   const transactions = getTransactions();
   const nextTransactions = [transaction, ...transactions];
-  saveTransactions(nextTransactions);
+  writeJson(TRANSACTION_STORAGE_KEY, nextTransactions.map(normalizeTransaction));
+
+  // Sync to Firestore asynchronously
+  const docRef = doc(db, 'transactions', transaction.id);
+  setDoc(docRef, normalizeTransaction(transaction)).catch((error) => {
+    console.error('Error adding transaction to Firestore:', error);
+  });
+
   return nextTransactions;
 };
 
@@ -85,12 +132,61 @@ export const updateTransaction = (transactionId: string, updates: Partial<Transa
   const nextTransactions = getTransactions().map((transaction) =>
     transaction.id === transactionId ? { ...transaction, ...updates } : transaction
   );
-  saveTransactions(nextTransactions);
+  writeJson(TRANSACTION_STORAGE_KEY, nextTransactions.map(normalizeTransaction));
+
+  // Sync to Firestore asynchronously
+  const docRef = doc(db, 'transactions', transactionId);
+  updateDoc(docRef, updates).catch((error) => {
+    console.error('Error updating transaction in Firestore:', error);
+  });
+
   return nextTransactions;
 };
 
 export const deleteTransaction = (transactionId: string) => {
   const nextTransactions = getTransactions().filter((transaction) => transaction.id !== transactionId);
-  saveTransactions(nextTransactions);
+  writeJson(TRANSACTION_STORAGE_KEY, nextTransactions.map(normalizeTransaction));
+
+  // Sync to Firestore asynchronously
+  const docRef = doc(db, 'transactions', transactionId);
+  deleteDoc(docRef).catch((error) => {
+    console.error('Error deleting transaction in Firestore:', error);
+  });
+
   return nextTransactions;
 };
+
+// Real-time listener subscriptions
+export const subscribeToMenuItems = (callback: (items: StoredMenuItem[]) => void) => {
+  return onSnapshot(collection(db, 'menuItems'), (snapshot) => {
+    const items: StoredMenuItem[] = [];
+    snapshot.forEach((doc) => {
+      items.push({ ...doc.data(), id: doc.id } as StoredMenuItem);
+    });
+    
+    if (items.length === 0) {
+      // If Firestore is empty, upload default menu items
+      const defaults = menuItems.map(normalizeMenuItem);
+      saveMenuItems(defaults);
+      callback(defaults);
+    } else {
+      writeJson(MENU_STORAGE_KEY, items);
+      callback(items);
+    }
+  });
+};
+
+export const subscribeToTransactions = (callback: (transactions: Transaction[]) => void) => {
+  return onSnapshot(collection(db, 'transactions'), (snapshot) => {
+    const list: Transaction[] = [];
+    snapshot.forEach((doc) => {
+      list.push(doc.data() as Transaction);
+    });
+    
+    // Sort transactions by createdAt descending
+    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    writeJson(TRANSACTION_STORAGE_KEY, list);
+    callback(list);
+  });
+};
+

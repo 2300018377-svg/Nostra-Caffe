@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, MessageCircle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/data/menuData';
 import { getTransactions } from '@/lib/storage';
 import { downloadReceiptPdf, shareReceiptPdf } from '@/lib/receiptPdf';
-import { isAdminSessionActive } from '@/lib/adminAuth';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { Transaction } from '@/types/transaction';
 
 const fallbackShareMessage =
   'Browser tidak mendukung berbagi file PDF otomatis. Nota akan diunduh terlebih dahulu, lalu silakan kirim PDF tersebut ke WhatsApp secara manual.';
@@ -20,10 +23,53 @@ const formatDateTime = (value: string) => {
 const Receipt = () => {
   const { transactionId } = useParams();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const transaction = useMemo(() => {
-    return getTransactions().find((item) => item.id === transactionId);
-  }, [transactionId]);
-  const isAdmin = isAdminSessionActive();
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const docRef = doc(db, 'authorizedAdmins', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          setIsAdmin(docSnap.exists());
+        } catch (error) {
+          console.error("Error checking receipt page admin auth:", error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+      setLoadingAdmin(false);
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!transactionId || !isAdmin) return;
+
+    // Check local storage first
+    const localTx = getTransactions().find((item) => item.id === transactionId);
+    if (localTx) {
+      setTransaction(localTx);
+      setLoading(false);
+    }
+
+    const docRef = doc(db, 'transactions', transactionId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setTransaction(docSnap.data() as Transaction);
+      }
+      setLoading(false);
+    }, () => {
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [transactionId, isAdmin]);
 
   const handlePrint = () => {
     window.print();
@@ -59,6 +105,17 @@ const Receipt = () => {
     }
   };
 
+  if (loadingAdmin) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Memeriksa hak akses...</p>
+        </div>
+      </main>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <main className="min-h-screen bg-background px-4 py-10">
@@ -71,6 +128,17 @@ const Receipt = () => {
           <Button asChild>
             <Link to="/admin">Masuk Admin/Kasir</Link>
           </Button>
+        </div>
+      </main>
+    );
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Memuat data nota...</p>
         </div>
       </main>
     );
