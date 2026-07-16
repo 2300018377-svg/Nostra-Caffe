@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 're
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
+  Check,
   ClipboardList,
   DollarSign,
   Download,
@@ -456,22 +457,7 @@ const Admin = () => {
     setEditingMenuId(null);
   };
 
-  const handleExportReportCsv = () => {
-    if (report.transactions.length === 0) {
-      toast({
-        title: 'Tidak ada data laporan',
-        description: 'Pilih rentang tanggal yang memiliki transaksi terlebih dahulu.',
-      });
-      return;
-    }
 
-    const csv = createTransactionsCsv(report.transactions);
-    downloadTextFile(
-      `laporan-nostra-caffe-${reportStartDate || 'awal'}-${reportEndDate || 'akhir'}.csv`,
-      csv,
-      'text/csv;charset=utf-8'
-    );
-  };
 
 
 
@@ -647,7 +633,8 @@ const Admin = () => {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background print:bg-white print:text-black">
+      <main className="min-h-screen bg-background print:hidden">
       <header className="border-b bg-card/80 backdrop-blur">
         <div className="container mx-auto flex flex-col gap-4 px-4 py-4 sm:py-5 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
@@ -695,9 +682,9 @@ const Admin = () => {
                   className="h-10"
                 />
               </label>
-              <Button type="button" variant="outline" onClick={handleExportReportCsv} className="self-end">
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
+              <Button type="button" variant="default" onClick={() => window.print()} className="self-end bg-primary hover:bg-primary/95 text-primary-foreground">
+                <Printer className="mr-2 h-4 w-4" />
+                Cetak Laporan (PDF)
               </Button>
             </div>
           </div>
@@ -955,7 +942,20 @@ const Admin = () => {
                       </div>
                     </div>
 
-                    <div className="mt-3 flex gap-2">
+                    {/* Quick 'Selesai' Button */}
+                    {(transaction.orderStatus === 'Menunggu' || transaction.orderStatus === 'Diproses') && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold mt-3 h-8 text-xs"
+                        onClick={() => handleOrderStatusChange(transaction.id, 'Selesai')}
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                        Tandai Selesai
+                      </Button>
+                    )}
+
+                    <div className="mt-2.5 flex gap-2">
                       <Button asChild size="sm" variant="outline" className="h-8 flex-1 text-xs font-medium">
                         <Link to={`/nota/${transaction.id}`}>
                           <Printer className="w-3.5 h-3.5 mr-1" />
@@ -1006,10 +1006,23 @@ const Admin = () => {
                 ) : (
                   displayedTransactions.map((transaction) => {
                     const receiptReady =
-                      transaction.orderStatus === 'Selesai' || transaction.paymentStatus === 'Sudah bayar';
+                      transaction.orderStatus === 'Selesai' || transaction.paymentStatus === 'Sudah bayar';                    const getRowStyles = () => {
+                      switch (transaction.orderStatus) {
+                        case 'Menunggu':
+                          return 'bg-amber-50/50 hover:bg-amber-100/60 dark:bg-amber-950/20 dark:hover:bg-amber-950/30 border-l-4 border-l-amber-500 font-medium';
+                        case 'Diproses':
+                          return 'bg-blue-50/50 hover:bg-blue-100/60 dark:bg-blue-950/20 dark:hover:bg-blue-950/30 border-l-4 border-l-blue-500';
+                        case 'Selesai':
+                          return 'border-l-4 border-l-emerald-500 hover:bg-muted/40';
+                        case 'Dibatalkan':
+                          return 'border-l-4 border-l-rose-500 opacity-60 bg-muted/20 hover:bg-muted/30 line-through decoration-muted-foreground/30';
+                        default:
+                          return 'hover:bg-muted/40';
+                      }
+                    };
 
                     return (
-                      <tr key={transaction.id} className="border-b last:border-0">
+                      <tr key={transaction.id} className={`border-b last:border-0 transition-colors ${getRowStyles()}`}>
                         <td className="px-3 py-3 align-top">{formatDateTime(transaction.createdAt)}</td>
                         <td className="px-3 py-3 align-top font-medium">{transaction.customerName}</td>
                         <td className="px-3 py-3 align-top">{getOrderTypeDisplay(transaction)}</td>
@@ -1052,6 +1065,17 @@ const Admin = () => {
                         </td>
                         <td className="px-3 py-3 align-top">
                           <div className="flex flex-col gap-2">
+                            {(transaction.orderStatus === 'Menunggu' || transaction.orderStatus === 'Diproses') && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                                onClick={() => handleOrderStatusChange(transaction.id, 'Selesai')}
+                              >
+                                <Check className="w-4 h-4 mr-1" />
+                                Selesai
+                              </Button>
+                            )}
                             <Button asChild size="sm" variant="outline">
                               <Link to={`/nota/${transaction.id}`}>
                                 <Printer className="w-4 h-4 mr-1" />
@@ -1285,7 +1309,99 @@ const Admin = () => {
         </section>
       </div>
     </main>
-  );
+
+    {/* Printable Sales Report Section (Only visible during print) */}
+    <div className="hidden print:block print:p-8 print:bg-white print:text-black print:w-full print:min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b-2 border-slate-300 pb-4 mb-6">
+        <div className="flex items-center gap-4">
+          <img src="/logo-nostra.png" alt="Logo" className="w-16 h-16 rounded-full object-cover" />
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Nostra-Caffe</h1>
+            <p className="text-sm text-slate-500">Laporan Penjualan Harian & Analitis</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-semibold">Periode Laporan</p>
+          <p className="text-xs text-slate-600">
+            {reportStartDate ? formatDateTime(reportStartDate) : 'Awal'} s/d {reportEndDate ? formatDateTime(reportEndDate) : 'Akhir'}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
+        </div>
+      </div>
+
+      {/* Summary Cards Grid */}
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="border border-slate-200 rounded p-3 text-center bg-slate-50">
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Transaksi</p>
+          <p className="text-xl font-extrabold mt-1">{report.totalTransactions}</p>
+        </div>
+        <div className="border border-slate-200 rounded p-3 text-center bg-slate-50">
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Pendapatan</p>
+          <p className="text-xl font-extrabold mt-1 text-emerald-600">{formatPrice(report.totalRevenue)}</p>
+        </div>
+        <div className="border border-slate-200 rounded p-3 text-center bg-slate-50">
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Pesanan Selesai</p>
+          <p className="text-xl font-extrabold mt-1 text-blue-600">{report.completedOrders}</p>
+        </div>
+        <div className="border border-slate-200 rounded p-3 text-center bg-slate-50">
+          <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Pesanan Batal</p>
+          <p className="text-xl font-extrabold mt-1 text-rose-600">{report.canceledOrders}</p>
+        </div>
+      </div>
+
+      {/* Table of Transactions */}
+      <div className="w-full mb-8">
+        <h2 className="text-sm font-bold mb-3 uppercase tracking-wider text-slate-700">Rincian Transaksi</h2>
+        <table className="w-full text-left text-xs border border-collapse border-slate-300">
+          <thead>
+            <tr className="bg-slate-100 border-b border-slate-300">
+              <th className="p-2.5 border-r border-slate-300 font-bold">Waktu</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">ID Transaksi</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Customer</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Tipe</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Daftar Menu (Qty)</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Metode</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Bayar</th>
+              <th className="p-2.5 border-r border-slate-300 font-bold">Status</th>
+              <th className="p-2.5 font-bold text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.transactions.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="p-4 text-center text-slate-400">
+                  Tidak ada transaksi dalam rentang tanggal ini.
+                </td>
+              </tr>
+            ) : (
+              report.transactions.map((tx) => (
+                <tr key={tx.id} className="border-b border-slate-200 hover:bg-slate-50">
+                  <td className="p-2.5 border-r border-slate-300 whitespace-nowrap">{formatDateTime(tx.createdAt)}</td>
+                  <td className="p-2.5 border-r border-slate-300 font-mono text-[10px]">{tx.id}</td>
+                  <td className="p-2.5 border-r border-slate-300 font-semibold">{tx.customerName}</td>
+                  <td className="p-2.5 border-r border-slate-300">{getOrderTypeDisplay(tx)}</td>
+                  <td className="p-2.5 border-r border-slate-300 max-w-[200px] break-words">
+                    {tx.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}
+                  </td>
+                  <td className="p-2.5 border-r border-slate-300">{tx.paymentMethod}</td>
+                  <td className="p-2.5 border-r border-slate-300 font-medium">{tx.paymentStatus}</td>
+                  <td className="p-2.5 border-r border-slate-300 font-medium">{tx.orderStatus}</td>
+                  <td className="p-2.5 font-bold text-right text-slate-900">{formatPrice(tx.totalPrice)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t border-dashed border-slate-400 pt-6 text-center text-xs text-slate-500">
+        <p>Nostra-Caffe © {new Date().getFullYear()} - Dokumen Laporan Penjualan Resmi</p>
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default Admin;
