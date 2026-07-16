@@ -129,11 +129,9 @@ export const addTransaction = (transaction: Transaction) => {
 };
 
 export const addTransactionAsync = async (transaction: Transaction): Promise<void> => {
-  const transactions = getTransactions();
-  const nextTransactions = [transaction, ...transactions];
-  writeJson(TRANSACTION_STORAGE_KEY, nextTransactions.map(normalizeTransaction));
-
-  // Sync to Firestore and await the result
+  // Tulis HANYA ke Firestore server — jangan tulis ke localStorage dulu.
+  // localStorage akan diisi secara otomatis oleh subscribeToTransactions (onSnapshot)
+  // saat server mengkonfirmasi data diterima. Ini memastikan semua device melihat data yang sama.
   const docRef = doc(db, 'transactions', transaction.id);
   await setDoc(docRef, normalizeTransaction(transaction));
 };
@@ -187,16 +185,24 @@ export const subscribeToMenuItems = (callback: (items: StoredMenuItem[]) => void
 };
 
 export const subscribeToTransactions = (callback: (transactions: Transaction[]) => void) => {
-  return onSnapshot(collection(db, 'transactions'), (snapshot) => {
-    const list: Transaction[] = [];
-    snapshot.forEach((doc) => {
-      list.push(doc.data() as Transaction);
-    });
-    
-    // Sort transactions by createdAt descending
-    list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    writeJson(TRANSACTION_STORAGE_KEY, list);
-    callback(list);
-  });
+  // hasMeta: false — hanya terima update dari server, bukan cache lokal
+  return onSnapshot(
+    collection(db, 'transactions'),
+    { includeMetadataChanges: false },
+    (snapshot) => {
+      const list: Transaction[] = [];
+      snapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as Transaction);
+      });
+
+      // Sort transactions by createdAt descending
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      writeJson(TRANSACTION_STORAGE_KEY, list);
+      callback(list);
+    },
+    (error) => {
+      console.error('subscribeToTransactions error:', error);
+    }
+  );
 };
 

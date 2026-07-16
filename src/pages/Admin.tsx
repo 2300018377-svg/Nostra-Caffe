@@ -132,7 +132,7 @@ const Admin = () => {
   const [registrationCode, setRegistrationCode] = useState('');
   const [registrationError, setRegistrationError] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>(() => getTransactions());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [menuItems, setMenuItems] = useState<StoredMenuItem[]>(() => getMenuItems());
   const [menuForm, setMenuForm] = useState<MenuFormState>(emptyMenuForm);
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
