@@ -29,23 +29,41 @@ const Receipt = () => {
   const [loadingAdmin, setLoadingAdmin] = useState(true);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeAdminSnap: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      // Clean up previous admin document snapshot listener
+      if (unsubscribeAdminSnap) {
+        unsubscribeAdminSnap();
+        unsubscribeAdminSnap = null;
+      }
+
       if (currentUser) {
-        try {
-          const docRef = doc(db, 'authorizedAdmins', currentUser.uid);
-          const docSnap = await getDoc(docRef);
-          setIsAdmin(docSnap.exists());
-        } catch (error) {
-          console.error("Error checking receipt page admin auth:", error);
-          setIsAdmin(false);
-        }
+        const docRef = doc(db, 'authorizedAdmins', currentUser.uid);
+        unsubscribeAdminSnap = onSnapshot(
+          docRef,
+          (docSnap) => {
+            setIsAdmin(docSnap.exists());
+            setLoadingAdmin(false);
+          },
+          (error) => {
+            console.error("Error checking receipt page admin auth:", error);
+            setIsAdmin(false);
+            setLoadingAdmin(false);
+          }
+        );
       } else {
         setIsAdmin(false);
+        setLoadingAdmin(false);
       }
-      setLoadingAdmin(false);
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeAdminSnap) {
+        unsubscribeAdminSnap();
+      }
+    };
   }, []);
 
   useEffect(() => {

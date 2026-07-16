@@ -42,7 +42,7 @@ import {
 } from '@/lib/adminReports';
 import { createBackupPayload, getBackupFileName, parseBackupPayload } from '@/lib/backup';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -179,26 +179,49 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+    let unsubscribeAdminSnap: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      
+      // Clean up previous admin document snapshot listener
+      if (unsubscribeAdminSnap) {
+        unsubscribeAdminSnap();
+        unsubscribeAdminSnap = null;
+      }
+
       if (currentUser) {
-        try {
-          const docRef = doc(db, 'authorizedAdmins', currentUser.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setIsAuthorized(true);
-          } else {
+        const docRef = doc(db, 'authorizedAdmins', currentUser.uid);
+        unsubscribeAdminSnap = onSnapshot(
+          docRef,
+          (docSnap) => {
+            setIsAuthorized(docSnap.exists());
+            setLoadingAuth(false);
+          },
+          (error) => {
+            console.error("Error verifying admin document:", error);
             setIsAuthorized(false);
+            setLoadingAuth(false);
           }
-        } catch (error) {
-          console.error("Error verifying admin document:", error);
-          setIsAuthorized(false);
-        }
+        );
       } else {
         setIsAuthorized(false);
+        setLoadingAuth(false);
       }
-      setLoadingAuth(false);
     });
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeAdminSnap) {
+        unsubscribeAdminSnap();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthorized) {
+      return;
+    }
 
     const unsubscribeMenu = subscribeToMenuItems(setMenuItems);
     
@@ -217,11 +240,10 @@ const Admin = () => {
     });
 
     return () => {
-      unsubscribeAuth();
       unsubscribeMenu();
       unsubscribeTx();
     };
-  }, []);
+  }, [isAuthorized, toast]);
 
   const report = useMemo(() => {
     return getTransactionReport(transactions, reportStartDate, reportEndDate);

@@ -35,7 +35,7 @@ Aplikasi ini menggunakan arsitektur modern berbasis **Serverless** dan **Offline
 4. **Nota Digital (Receipt PDF)**: Mengunduh nota transaksi digital secara langsung sebagai file PDF tanpa kertas.
 
 ### 💼 Sisi Pengelola (Admin/Kasir Flow)
-1. **Google OAuth & Guarded Routes**: Login admin terproteksi menggunakan Google. Registrasi admin baru wajib memasukkan kode otorisasi `"nostra"`.
+1. **Google OAuth & Guarded Routes**: Login admin terproteksi menggunakan Google. Registrasi admin baru wajib memasukkan kode otorisasi khusus (token rahasia pengelola).
 2. **Real-time Order Tracker**: Daftar pesanan kasir diperbarui otomatis secara real-time menggunakan Firebase Snapshot Listeners.
 3. **Audio Chime Notification**: Kasir memperoleh sinyal suara lonceng otomatis saat ada pesanan baru yang dikirim oleh pelanggan.
 4. **Analitik Finansial**: Laporan harian interaktif berupa total omzet, pesanan sukses, pembatalan pesanan, dan visualisasi grafik tren omzet harian.
@@ -110,7 +110,7 @@ service cloud.firestore {
       allow write: if request.auth != null && exists(/databases/$(database)/documents/authorizedAdmins/$(request.auth.uid));
     }
     match /authorizedAdmins/{adminId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null && request.auth.uid == adminId;
     }
   }
 }
