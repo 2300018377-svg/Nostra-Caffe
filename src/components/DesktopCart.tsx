@@ -9,7 +9,7 @@ import { CheckoutPayload, OrderType, PaymentMethod } from '@/types/transaction';
 import { useToast } from '@/hooks/use-toast';
 
 interface DesktopCartProps {
-  onCheckout: (payload: CheckoutPayload) => void;
+  onCheckout: (payload: CheckoutPayload) => Promise<void>;
 }
 
 export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
@@ -18,6 +18,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
   const [orderType, setOrderType] = useState<OrderType>('Dine in');
   const [tableNumber, setTableNumber] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const {
     items,
@@ -42,7 +43,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
     window.open(`https://wa.me/6282178695665?text=${message}`, '_blank');
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const trimmedName = customerName.trim();
     if (!trimmedName) {
       toast({
@@ -61,28 +62,35 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
       return;
     }
 
-    onCheckout({
-      customerName: trimmedName,
-      paymentMethod,
-      orderType,
-      tableNumber: orderType === 'Dine in' ? trimmedTableNumber : '',
-      orderNotes: orderNotes.trim(),
-      items: items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        subtotal: item.price * item.quantity,
-      })),
-      totalItems,
-      totalPrice,
-    });
-    clearCart();
-    setCustomerName('');
-    setPaymentMethod('Cash');
-    setOrderType('Dine in');
-    setTableNumber('');
-    setOrderNotes('');
+    setIsSubmitting(true);
+    try {
+      await onCheckout({
+        customerName: trimmedName,
+        paymentMethod,
+        orderType,
+        tableNumber: orderType === 'Dine in' ? trimmedTableNumber : '',
+        orderNotes: orderNotes.trim(),
+        items: items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.price * item.quantity,
+        })),
+        totalItems,
+        totalPrice,
+      });
+      clearCart();
+      setCustomerName('');
+      setPaymentMethod('Cash');
+      setOrderType('Dine in');
+      setTableNumber('');
+      setOrderNotes('');
+    } catch (error) {
+      console.error('Checkout error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInstagram = () => {
@@ -198,7 +206,8 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
                 setOrderNotes={setOrderNotes}
                 onCheckout={handleCheckout}
                 onWhatsApp={handleWhatsApp}
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isSubmitting}
+                isSubmitting={isSubmitting}
               />
 
               {/* Action Buttons */}
@@ -207,6 +216,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
                   onClick={handleInstagram}
                   size="sm"
                   className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white px-2 text-xs"
+                  disabled={isSubmitting}
                 >
                   <Instagram className="w-4 h-4 mr-1" />
                   Instagram
@@ -215,6 +225,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
                   onClick={handleShopeeFood}
                   size="sm"
                   className="bg-orange-500 hover:bg-orange-600 text-white px-2 text-xs"
+                  disabled={isSubmitting}
                 >
                   <ShoppingCart className="w-4 h-4 mr-1" />
                   Shopee
@@ -227,6 +238,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
                 variant="ghost"
                 size="sm"
                 className="w-full text-muted-foreground hover:text-destructive"
+                disabled={isSubmitting}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Kosongkan

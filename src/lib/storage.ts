@@ -128,6 +128,16 @@ export const addTransaction = (transaction: Transaction) => {
   return nextTransactions;
 };
 
+export const addTransactionAsync = async (transaction: Transaction): Promise<void> => {
+  const transactions = getTransactions();
+  const nextTransactions = [transaction, ...transactions];
+  writeJson(TRANSACTION_STORAGE_KEY, nextTransactions.map(normalizeTransaction));
+
+  // Sync to Firestore and await the result
+  const docRef = doc(db, 'transactions', transaction.id);
+  await setDoc(docRef, normalizeTransaction(transaction));
+};
+
 export const updateTransaction = (transactionId: string, updates: Partial<Transaction>) => {
   const nextTransactions = getTransactions().map((transaction) =>
     transaction.id === transactionId ? { ...transaction, ...updates } : transaction

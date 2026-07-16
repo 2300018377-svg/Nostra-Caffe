@@ -22,6 +22,7 @@ interface CheckoutControlsProps {
   onCheckout: () => void;
   onWhatsApp: () => void;
   disabled?: boolean;
+  isSubmitting?: boolean;
 }
 
 export const CheckoutControls = ({
@@ -39,6 +40,7 @@ export const CheckoutControls = ({
   onCheckout,
   onWhatsApp,
   disabled = false,
+  isSubmitting = false,
 }: CheckoutControlsProps) => {
   const customerNameId = `${idPrefix}-customer-name`;
   const paymentMethodId = `${idPrefix}-payment-method`;
@@ -173,9 +175,13 @@ export const CheckoutControls = ({
         </div>
       )}
 
-      <Button onClick={onCheckout} className="w-full" disabled={disabled}>
-        <ReceiptText className="w-4 h-4 mr-2" />
-        Buat Pesanan
+      <Button onClick={onCheckout} className="w-full" disabled={disabled || isSubmitting}>
+        {isSubmitting ? (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent mr-2" />
+        ) : (
+          <ReceiptText className="w-4 h-4 mr-2" />
+        )}
+        {isSubmitting ? 'Memproses Pesanan...' : 'Buat Pesanan'}
       </Button>
 
       <Button onClick={onWhatsApp} variant="outline" className="w-full">

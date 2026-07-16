@@ -8,7 +8,7 @@ import { Cart } from '@/components/Cart';
 import { DesktopCart } from '@/components/DesktopCart';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { addTransaction, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
+import { addTransactionAsync, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
 import { CheckoutPayload, Transaction } from '@/types/transaction';
 
 const Index = () => {
@@ -23,7 +23,7 @@ const Index = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleCheckout = (payload: CheckoutPayload) => {
+  const handleCheckout = async (payload: CheckoutPayload) => {
     const transaction: Transaction = {
       id: `TRX-${Date.now()}`,
       customerName: payload.customerName,
@@ -39,12 +39,22 @@ const Index = () => {
       createdAt: new Date().toISOString(),
     };
 
-    addTransaction(transaction);
-    toast({
-      title: 'Pesanan berhasil dibuat',
-      description: `Transaksi ${transaction.id} tersimpan untuk ${transaction.customerName}.`,
-    });
-    navigate(`/pesanan/${transaction.id}`);
+    try {
+      await addTransactionAsync(transaction);
+      toast({
+        title: 'Pesanan berhasil dibuat',
+        description: `Transaksi ${transaction.id} tersimpan untuk ${transaction.customerName}.`,
+      });
+      navigate(`/pesanan/${transaction.id}`);
+    } catch (error: any) {
+      console.error('Failed to place order in Firestore:', error);
+      toast({
+        title: 'Gagal membuat pesanan',
+        description: error?.message || 'Database ditolak atau koneksi internet bermasalah.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
   return (
