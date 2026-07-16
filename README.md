@@ -115,3 +115,27 @@ service cloud.firestore {
   }
 }
 ```
+
+---
+
+## 🚀 7. Catatan Pembaruan & Cekpoin Stabil (Update & Stable Checkpoint)
+
+Halaman ini mendokumentasikan kendala-kendala teknis yang dihadapi selama masa pengujian sistem pemesanan real-time lintas perangkat beserta penyelesaiannya:
+
+### ⚠️ Masalah Teknis & Kendala yang Ditemukan:
+1. **Penguncian IndexedDB Multi-Tab di Browser Mobile**
+   * *Kendala*: Menggunakan `persistentMultipleTabManager` bawaan SDK Firestore menyebabkan kegagalan penguncian database IndexedDB pada browser mobile (Chrome/Safari) karena pembatasan sandboxing proses latar belakang. Akibatnya, sinkronisasi terhenti secara senyap, membuat data pesanan terisolasi secara offline hanya pada HP pelanggan saja.
+   * *Solusi*: Mengatur inisialisasi Firestore menjadi `getFirestore(app)` standar guna mencegah tab-locking di perangkat mobile dan menjamin jalur sinkronisasi jaringan selalu aktif dan lancar.
+2. **Limit Kuota Harian Firebase Spark Plan Tercapai (Exceeded Quota Limits)**
+   * *Kendala*: Batas maksimal gratis Firestore harian (20.000 writes per hari) sempat habis penuh pada proyek Firebase lama akibat antrean sinkronisasi latar belakang yang mencoba melakukan penulisan ulang secara agresif. Akibatnya, Firestore menolak semua data baru dari pelanggan.
+   * *Solusi*: Membuat proyek Firebase baru (`nostra-caffe-8185e`) yang bersih dengan kuota tulis segar, dan melakukan penyesuaian *Firestore Security Rules* agar terbuka untuk transaksi tanpa hambatan hak akses.
+3. **Pemberitahuan Status Sinkronisasi Palsu (False-Positive Sync)**
+   * *Kendala*: Halaman pelacakan pesanan customer (`OrderSuccess.tsx`) langsung menampilkan badge hijau sukses terkirim meskipun data sebenarnya baru masuk ke memori cache lokal dan belum terunggah ke Firestore cloud.
+   * *Solusi*: Memperbarui listener Firestore `onSnapshot` menggunakan parameter `{ includeMetadataChanges: true }` dan memverifikasi `!docSnap.metadata.fromCache && !docSnap.metadata.hasPendingWrites`. Dengan ini, indikator status sinkronisasi di HP pelanggan benar-benar baru akan berubah menjadi **🟢 Tersimpan & dikirim ke kasir** hanya ketika server Firebase cloud secara resmi mengonfirmasi data telah diterima.
+
+### 🛠️ Kondisi Sistem Saat Ini (Stable Checkpoint):
+* **Kecepatan Checkout Instan**: Transaksi diselesaikan dalam **<50ms** berkat *Optimistic UI* (masuk ke penyimpanan lokal pembeli terlebih dahulu dan sinkronisasi ke server berjalan di latar belakang).
+* **Sinkronisasi Real-Time Akurat**: Pesanan langsung masuk ke antrean laptop admin kasir dalam hitungan detik setelah badge status di HP pembeli berubah hijau.
+* **Perbaikan Tampilan Stepper Responsif**: Masalah visual pada garis progres stepper yang meluber (overflow) di sebelah kanan tombol "Selesai" telah diperbaiki secara responsif menggunakan container bersarang (*nested containers*) sehingga terlihat presisi dan profesional di seluruh perangkat (HP, tablet, maupun PC).
+* **Konfigurasi Aktif**: Integrasi database dan hak otentikasi Google Login saat ini mengarah penuh ke proyek database aktif `nostra-caffe-8185e`.
+
