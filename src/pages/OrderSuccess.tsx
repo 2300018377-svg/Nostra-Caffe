@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ClipboardList, Check } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Check, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/data/menuData';
+import { getTransactions } from '@/lib/storage';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Transaction } from '@/types/transaction';
@@ -19,22 +20,43 @@ const OrderSuccess = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [syncStatus, setSyncStatus] = useState<'syncing' | 'synced' | 'failed'>('syncing');
+
   useEffect(() => {
     if (!transactionId) return;
 
-    // Ambil data HANYA dari Firestore server (bukan localStorage)
-    // agar status pesanan selalu sinkron dengan panel admin secara real-time.
+    // Baca dari localStorage dulu agar halaman tampil INSTAN tanpa menunggu Firestore.
+    const localTx = getTransactions().find((item) => item.id === transactionId);
+    if (localTx) {
+      setTransaction(localTx);
+      setLoading(false);
+    }
+
+    // Dengarkan Firestore secara real-time untuk status sinkronisasi dan update status pesanan.
     const docRef = doc(db, 'transactions', transactionId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         setTransaction(docSnap.data() as Transaction);
+        setSyncStatus('synced');
+      } else if (!localTx) {
+        // Tidak ada di localStorage maupun Firestore
+        setSyncStatus('failed');
       }
       setLoading(false);
     }, () => {
+      setSyncStatus('failed');
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Jika setelah 20 detik Firestore belum konfirmasi, tandai sebagai gagal sinkron.
+    const failTimer = setTimeout(() => {
+      setSyncStatus((prev) => prev === 'syncing' ? 'failed' : prev);
+    }, 20000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(failTimer);
+    };
   }, [transactionId]);
 
   if (loading) {
@@ -73,6 +95,27 @@ const OrderSuccess = () => {
           </div>
           <h1 className="text-2xl font-bold">Pesanan Berhasil Dibuat</h1>
           <p className="text-sm text-muted-foreground">Simpan ID transaksi untuk pengecekan di kasir.</p>
+          {/* Sync status badge */}
+          <div className="mt-2 flex justify-center">
+            {syncStatus === 'syncing' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-600 border border-amber-500/20">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Menyinkronkan ke server...
+              </span>
+            )}
+            {syncStatus === 'synced' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 border border-emerald-500/20">
+                <Wifi className="h-3 w-3" />
+                Tersimpan & dikirim ke kasir
+              </span>
+            )}
+            {syncStatus === 'failed' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 border border-red-500/20">
+                <WifiOff className="h-3 w-3" />
+                Koneksi server bermasalah — tunjukkan ID ke kasir
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Real-time Order Status Stepper */}

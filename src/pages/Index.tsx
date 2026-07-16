@@ -8,14 +8,13 @@ import { Cart } from '@/components/Cart';
 import { DesktopCart } from '@/components/DesktopCart';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { addTransactionAsync, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
+import { addTransaction, addTransactionAsync, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
 import { CheckoutPayload, Transaction } from '@/types/transaction';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [menuItems, setMenuItems] = useState<StoredMenuItem[]>(() => getMenuItems());
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,11 +38,17 @@ const Index = () => {
       createdAt: new Date().toISOString(),
     };
 
-    // Await langsung tanpa timeout — pastikan data BENAR-BENAR tersimpan
-    // di Firestore server sebelum diarahkan ke halaman sukses.
-    // Jika gagal, tampilkan error nyata dan JANGAN navigasi agar user bisa coba lagi.
-    await addTransactionAsync(transaction);
+    // Optimistic UI: tulis ke localStorage DULU (instan < 1ms) lalu navigasi seketika.
+    // Sinkronisasi ke Firestore server berjalan di background — admin menerima
+    // pesanan begitu Firestore mengkonfirmasi. Status sinkronisasi ditampilkan
+    // di halaman pesanan (OrderSuccess) bukan di sini.
+    addTransaction(transaction);
     navigate(`/pesanan/${transaction.id}`);
+
+    // Background sync — jangan await di sini agar navigasi tetap instan.
+    addTransactionAsync(transaction).catch((err) => {
+      console.error('[Firestore] Background sync failed:', err);
+    });
   };
 
   return (
