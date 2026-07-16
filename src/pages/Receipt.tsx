@@ -179,24 +179,24 @@ const Receipt = () => {
 
   return (
     <main className="min-h-screen bg-muted px-4 py-6 print:bg-white">
-      <div className="mx-auto mb-4 flex max-w-md flex-wrap gap-2 print:hidden">
-        <Button asChild variant="outline">
+      <div className="mx-auto mb-6 grid max-w-md grid-cols-2 gap-3 print:hidden">
+        <Button asChild variant="outline" className="h-12 text-base font-semibold col-span-2 sm:col-span-1 shadow-sm">
           <Link to="/admin">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Kembali
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Kembali ke Admin
           </Link>
         </Button>
-        <Button onClick={handlePrint} disabled={isGeneratingPdf}>
-          <Printer className="h-4 w-4 mr-2" />
+        <Button onClick={handlePrint} disabled={isGeneratingPdf} className="h-12 text-base font-semibold">
+          <Printer className="h-5 w-5 mr-2" />
           Cetak Nota
         </Button>
-        <Button onClick={handleDownloadPdf} variant="secondary" disabled={isGeneratingPdf}>
-          <Download className="h-4 w-4 mr-2" />
-          Download PDF
+        <Button onClick={handleDownloadPdf} variant="secondary" disabled={isGeneratingPdf} className="h-12 text-base font-semibold">
+          <Download className="h-5 w-5 mr-2" />
+          Unduh PDF
         </Button>
-        <Button onClick={handleShareWhatsApp} variant="outline" disabled={isGeneratingPdf}>
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Bagikan PDF ke WhatsApp
+        <Button onClick={handleShareWhatsApp} variant="outline" disabled={isGeneratingPdf} className="h-12 text-base font-semibold col-span-2 border-primary/30 hover:border-primary/50 text-primary">
+          <MessageCircle className="h-5 w-5 mr-2" />
+          Kirim ke WhatsApp
         </Button>
       </div>
 

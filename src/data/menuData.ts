@@ -80,5 +80,6 @@ export const menuItems: MenuItem[] = [
 ];
 
 export const formatPrice = (price: number): string => {
-  return `${price}K`;
+  const actualPrice = price * 1000;
+  return `${actualPrice.toLocaleString('id-ID')}Rp`;
 };

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Instagram, MapPin, MessageCircle } from 'lucide-react';
+import { Instagram, MapPin, MessageCircle, ShoppingBag } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -42,6 +42,16 @@ export const Footer = () => {
               aria-label="Instagram"
             >
               <Instagram className="w-5 h-5" />
+            </a>
+            <a
+              href="https://shopee.co.id/universal-link/now-food/shop/22056334"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-[#EE4D2D]"
+              aria-label="Shopee Food"
+              title="Shopee Food"
+            >
+              <ShoppingBag className="w-5 h-5" />
             </a>
             <a
               href="https://maps.app.goo.gl/WUfsmMrnBJfntVkA9"

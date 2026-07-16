@@ -90,24 +90,24 @@ export const MenuCard = ({ item }: MenuCardProps) => {
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="font-semibold text-foreground text-lg mb-1 line-clamp-1">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-semibold text-foreground text-sm sm:text-base mb-0.5 line-clamp-1">
           {item.name}
         </h3>
         {item.description && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-1 sm:line-clamp-2">
             {item.description}
           </p>
         )}
         
         <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary">
+          <span className="text-sm sm:text-base font-extrabold text-primary">
             {formatPrice(item.price)}
           </span>
           <button
             onClick={handleAddToCart}
             disabled={!isAvailable}
-            className={`p-3 rounded-full shadow-lg transition-all duration-200 ${
+            className={`p-1.5 sm:p-2.5 rounded-full shadow-md sm:shadow-lg transition-all duration-200 ${
               isAvailable
                 ? 'btn-accent hover:shadow-xl hover:scale-110 active:scale-95'
                 : 'cursor-not-allowed bg-muted text-muted-foreground shadow-none'
@@ -118,7 +118,7 @@ export const MenuCard = ({ item }: MenuCardProps) => {
                 : `${item.name} sedang tidak tersedia`
             }
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShoppingBag, Plus, Minus, Trash2, Instagram, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react';
 import { useCartContext } from '@/context/CartContext';
 import { formatPrice } from '@/data/menuData';
 import { ImageWithFallback } from './ImageWithFallback';
@@ -93,13 +93,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
     }
   };
 
-  const handleInstagram = () => {
-    window.open('https://www.instagram.com/noka.yogyakarta', '_blank');
-  };
 
-  const handleShopeeFood = () => {
-    window.open('https://shopee.co.id/universal-link/now-food/shop/22056334', '_blank');
-  };
 
   return (
     <aside className="hidden lg:block w-96 h-dvh sticky top-0 border-l border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
@@ -210,27 +204,7 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
                 isSubmitting={isSubmitting}
               />
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                <Button 
-                  onClick={handleInstagram}
-                  size="sm"
-                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:opacity-90 text-white px-2 text-xs"
-                  disabled={isSubmitting}
-                >
-                  <Instagram className="w-4 h-4 mr-1" />
-                  Instagram
-                </Button>
-                <Button 
-                  onClick={handleShopeeFood}
-                  size="sm"
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-2 text-xs"
-                  disabled={isSubmitting}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1" />
-                  Shopee
-                </Button>
-              </div>
+
 
               {/* Clear Cart */}
               <Button 
