@@ -32,15 +32,19 @@ const OrderSuccess = () => {
       setLoading(false);
     }
 
-    // Dengarkan Firestore secara real-time untuk status sinkronisasi dan update status pesanan.
+    // includeMetadataChanges: true agar kita bisa membedakan data dari server vs cache lokal.
+    // fromCache: false + hasPendingWrites: false = data sudah benar-benar dikonfirmasi server.
     const docRef = doc(db, 'transactions', transactionId);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    const unsubscribe = onSnapshot(docRef, { includeMetadataChanges: true }, (docSnap) => {
       if (docSnap.exists()) {
         setTransaction(docSnap.data() as Transaction);
-        setSyncStatus('synced');
-      } else if (!localTx) {
-        // Tidak ada di localStorage maupun Firestore
-        setSyncStatus('failed');
+        // Hanya tandai 'synced' jika SERVER yang mengkonfirmasi — bukan cache lokal/pending write.
+        if (!docSnap.metadata.fromCache && !docSnap.metadata.hasPendingWrites) {
+          setSyncStatus('synced');
+        }
+      } else if (!docSnap.metadata.hasPendingWrites) {
+        // Dokumen tidak ada di server dan tidak ada pending write → sync gagal
+        if (!localTx) setSyncStatus('failed');
       }
       setLoading(false);
     }, () => {
@@ -48,10 +52,10 @@ const OrderSuccess = () => {
       setLoading(false);
     });
 
-    // Jika setelah 20 detik Firestore belum konfirmasi, tandai sebagai gagal sinkron.
+    // Jika setelah 25 detik server belum konfirmasi, tandai sebagai gagal.
     const failTimer = setTimeout(() => {
       setSyncStatus((prev) => prev === 'syncing' ? 'failed' : prev);
-    }, 20000);
+    }, 25000);
 
     return () => {
       unsubscribe();

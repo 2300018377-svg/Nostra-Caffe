@@ -184,7 +184,10 @@ export const subscribeToMenuItems = (callback: (items: StoredMenuItem[]) => void
   });
 };
 
-export const subscribeToTransactions = (callback: (transactions: Transaction[]) => void) => {
+export const subscribeToTransactions = (
+  callback: (transactions: Transaction[]) => void,
+  onError?: (error: Error) => void
+) => {
   // hasMeta: false — hanya terima update dari server, bukan cache lokal
   return onSnapshot(
     collection(db, 'transactions'),
@@ -202,6 +205,7 @@ export const subscribeToTransactions = (callback: (transactions: Transaction[]) 
     },
     (error) => {
       console.error('subscribeToTransactions error:', error);
+      if (onError) onError(error);
     }
   );
 };

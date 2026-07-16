@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  WifiOff,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -149,6 +150,7 @@ const Admin = () => {
   const [reportEndDate, setReportEndDate] = useState(() => toDateInputValue());
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
   const [newOrderAlert, setNewOrderAlert] = useState<{ customerName: string; id: string; totalPrice: number } | null>(null);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const isInitialLoad = useRef(true);
@@ -229,22 +231,33 @@ const Admin = () => {
     }
 
     const unsubscribeMenu = subscribeToMenuItems(setMenuItems);
+
+    // Reset Firestore error state setiap kali subscription di-setup ulang
+    setFirestoreError(null);
     
-    const unsubscribeTx = subscribeToTransactions((nextTx) => {
-      setTransactions((prevTx) => {
-        if (!isInitialLoad.current && nextTx.length > prevTx.length) {
-          playOrderChime();
-          const newOrder = nextTx[0];
-          setNewOrderAlert({
-            id: newOrder.id,
-            customerName: newOrder.customerName,
-            totalPrice: newOrder.totalPrice,
-          });
-        }
-        return nextTx;
-      });
-      isInitialLoad.current = false;
-    });
+    const unsubscribeTx = subscribeToTransactions(
+      (nextTx) => {
+        setFirestoreError(null); // Berhasil terima data → hapus error state
+        setTransactions((prevTx) => {
+          if (!isInitialLoad.current && nextTx.length > prevTx.length) {
+            playOrderChime();
+            const newOrder = nextTx[0];
+            setNewOrderAlert({
+              id: newOrder.id,
+              customerName: newOrder.customerName,
+              totalPrice: newOrder.totalPrice,
+            });
+          }
+          return nextTx;
+        });
+        isInitialLoad.current = false;
+      },
+      (error) => {
+        // Error dari Firestore (misal: permission-denied, unavailable)
+        setFirestoreError(error.code || error.message || 'Koneksi Firestore gagal');
+        console.error('[Admin] subscribeToTransactions error:', error);
+      }
+    );
 
     return () => {
       unsubscribeMenu();
@@ -927,6 +940,33 @@ const Admin = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Firestore Connection Error Banner */}
+      {firestoreError && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[99] w-full max-w-lg px-4">
+          <div className="bg-orange-600 text-white p-4 rounded-xl shadow-2xl flex items-start justify-between border-2 border-orange-400/40">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+                <WifiOff className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm">Koneksi Database Bermasalah</h4>
+                <p className="text-xs font-medium opacity-90 mt-0.5">
+                  Pesanan tidak dapat diterima secara real-time. Kode: <code className="font-mono bg-black/20 px-1 rounded">{firestoreError}</code>
+                </p>
+                <p className="text-xs opacity-80 mt-1">Cek Firebase Console → Firestore → Rules (izinkan read: if true)</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setFirestoreError(null)}
+              className="p-1 hover:bg-white/10 rounded-full shrink-0 ml-2"
+              aria-label="Tutup error"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
