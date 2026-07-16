@@ -5,7 +5,6 @@ import {
   ClipboardList,
   DollarSign,
   Download,
-  FileDown,
   ListChecks,
   LogOut,
   Plus,
@@ -14,7 +13,6 @@ import {
   Search,
   ShieldCheck,
   Trash2,
-  Upload,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +38,7 @@ import {
   getTransactionReport,
   toDateInputValue,
 } from '@/lib/adminReports';
-import { createBackupPayload, getBackupFileName, parseBackupPayload } from '@/lib/backup';
+
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
@@ -475,49 +473,7 @@ const Admin = () => {
     );
   };
 
-  const handleExportBackup = () => {
-    const backup = createBackupPayload(menuItems, transactions);
-    downloadTextFile(
-      getBackupFileName(),
-      JSON.stringify(backup, null, 2),
-      'application/json;charset=utf-8'
-    );
-  };
 
-  const handleImportBackup = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    try {
-      const backup = parseBackupPayload(await file.text());
-      const confirmed = window.confirm(
-        'Import backup akan mengganti seluruh transaksi dan menu yang tersimpan di browser ini. Lanjutkan?'
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      saveMenuItems(backup.menuItems);
-      saveTransactions(backup.transactions);
-      setMenuItems(backup.menuItems);
-      setTransactions(backup.transactions);
-      resetMenuForm();
-      toast({
-        title: 'Backup berhasil dipulihkan',
-        description: `${backup.menuItems.length} menu dan ${backup.transactions.length} transaksi sudah dimuat.`,
-      });
-    } catch {
-      toast({
-        title: 'Import backup gagal',
-        description: 'Pastikan file yang dipilih adalah backup Nostra-Caffe yang valid.',
-      });
-    } finally {
-      event.target.value = '';
-    }
-  };
 
   const handleMenuSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -796,26 +752,6 @@ const Admin = () => {
           )}
         </section>
 
-        <section className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold leading-tight">Backup Data</h2>
-              <p className="text-sm text-muted-foreground">Simpan atau pulihkan menu dan transaksi dari file JSON.</p>
-            </div>
-            <div className="grid gap-2 sm:flex sm:flex-wrap">
-              <Button type="button" variant="outline" onClick={handleExportBackup}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Export Backup
-              </Button>
-              <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground">
-                <Upload className="h-4 w-4" />
-                Import Backup
-                <input type="file" accept="application/json,.json" onChange={handleImportBackup} className="sr-only" />
-              </label>
-            </div>
-          </div>
-        </section>
-
         <section className="space-y-4">
           <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
@@ -900,6 +836,16 @@ const Admin = () => {
             </div>
           </div>
 
+          <div className="md:hidden mt-6 mb-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              Daftar Pesanan & Riwayat
+            </h3>
+          </div>
+
           <div className="grid gap-3 md:hidden">
             {displayedTransactions.length === 0 ? (
               <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm">
@@ -910,61 +856,79 @@ const Admin = () => {
                 const receiptReady =
                   transaction.orderStatus === 'Selesai' || transaction.paymentStatus === 'Sudah bayar';
 
+                const getStatusStyles = () => {
+                  switch (transaction.orderStatus) {
+                    case 'Menunggu':
+                      return 'border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/10 ring-1 ring-amber-500/20';
+                    case 'Diproses':
+                      return 'border-l-4 border-l-blue-500 bg-blue-50/40 dark:bg-blue-950/10 ring-1 ring-blue-500/20';
+                    case 'Selesai':
+                      return 'border-l-4 border-l-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/5';
+                    case 'Dibatalkan':
+                      return 'border-l-4 border-l-rose-500 bg-rose-50/10 dark:bg-rose-950/5 opacity-70';
+                    default:
+                      return 'border-l-4 border-l-muted';
+                  }
+                };
+
                 return (
-                  <article key={transaction.id} className="rounded-lg border bg-card p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
+                  <article 
+                    key={transaction.id} 
+                    className={`rounded-lg border bg-card p-3 shadow-sm transition-all duration-200 ${getStatusStyles()}`}
+                  >
+                    <div className="flex items-center justify-between border-b pb-2 mb-2">
                       <div className="min-w-0">
-                        <h3 className="break-words text-base font-semibold">{transaction.customerName}</h3>
-                        <p className="text-xs text-muted-foreground">{formatDateTime(transaction.createdAt)}</p>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-semibold truncate max-w-[150px]">{transaction.customerName}</h4>
+                          {transaction.orderStatus === 'Menunggu' && (
+                            <span className="inline-flex items-center rounded bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 text-[9px] font-bold text-amber-800 dark:text-amber-300 uppercase animate-pulse">
+                              Baru
+                            </span>
+                          )}
+                          {transaction.orderStatus === 'Diproses' && (
+                            <span className="inline-flex items-center rounded bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 text-[9px] font-bold text-blue-800 dark:text-blue-300 uppercase">
+                              Proses
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{formatDateTime(transaction.createdAt)}</p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-xs text-muted-foreground">Total</p>
-                        <p className="font-semibold text-primary">{formatPrice(transaction.totalPrice)}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Total</p>
+                        <p className="text-sm font-bold text-primary">{formatPrice(transaction.totalPrice)}</p>
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-3 rounded-md bg-muted/40 p-3 text-sm">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Item</p>
-                        <p className="font-medium">{transaction.totalItems}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Metode</p>
-                        <p className="font-medium">{transaction.paymentMethod}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-xs text-muted-foreground">Tipe pesanan</p>
-                        <p className="font-medium">{getOrderTypeDisplay(transaction)}</p>
-                      </div>
-                      {transaction.orderNotes && (
-                        <div className="col-span-2">
-                          <p className="text-xs text-muted-foreground">Catatan</p>
-                          <p className="font-medium">{transaction.orderNotes}</p>
-                        </div>
-                      )}
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground font-medium mb-1.5">
+                      <span className="text-foreground">{getOrderTypeDisplay(transaction)}</span>
+                      <span>•</span>
+                      <span>{transaction.paymentMethod}</span>
+                      <span>•</span>
+                      <span>{transaction.totalItems} Item</span>
                     </div>
 
-                    <div className="mt-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Daftar menu</p>
-                      <ul className="mt-2 space-y-1 text-sm">
-                        {transaction.items.map((item) => (
-                          <li key={item.id} className="flex justify-between gap-3">
-                            <span className="min-w-0 break-words">{item.name}</span>
-                            <span className="shrink-0 font-medium">x{item.quantity}</span>
-                          </li>
-                        ))}
-                      </ul>
+                    {transaction.orderNotes && (
+                      <div className="mb-2 text-xs bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 px-2 py-1 rounded border border-amber-200/30 italic">
+                        "{transaction.orderNotes}"
+                      </div>
+                    )}
+
+                    <div className="text-xs bg-muted/30 dark:bg-muted/10 p-2 rounded border border-border/50">
+                      <span className="font-semibold text-muted-foreground">Pesanan: </span>
+                      <span className="font-medium text-foreground">
+                        {transaction.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}
+                      </span>
                     </div>
 
-                    <div className="mt-4 grid gap-3">
-                      <label className="grid gap-1 text-sm font-medium">
-                        Pembayaran
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
+                      <div className="grid gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Pembayaran</span>
                         <select
                           value={transaction.paymentStatus}
                           onChange={(event) =>
                             handlePaymentStatusChange(transaction.id, event.target.value as PaymentStatus)
                           }
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                          className="h-8 w-full rounded-md border border-input bg-background px-1.5 py-0.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                         >
                           {paymentStatuses.map((status) => (
                             <option key={status} value={status}>
@@ -972,15 +936,15 @@ const Admin = () => {
                             </option>
                           ))}
                         </select>
-                      </label>
-                      <label className="grid gap-1 text-sm font-medium">
-                        Status pesanan
+                      </div>
+                      <div className="grid gap-0.5">
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Status Pesanan</span>
                         <select
                           value={transaction.orderStatus}
                           onChange={(event) =>
                             handleOrderStatusChange(transaction.id, event.target.value as OrderStatus)
                           }
-                          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                          className="h-8 w-full rounded-md border border-input bg-background px-1.5 py-0.5 text-xs font-medium focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                         >
                           {orderStatuses.map((status) => (
                             <option key={status} value={status}>
@@ -988,19 +952,13 @@ const Admin = () => {
                             </option>
                           ))}
                         </select>
-                      </label>
+                      </div>
                     </div>
 
-                    {!receiptReady && (
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        Ideal dicetak setelah selesai atau sudah bayar.
-                      </p>
-                    )}
-
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <Button asChild size="sm" variant="outline" className="w-full">
+                    <div className="mt-3 flex gap-2">
+                      <Button asChild size="sm" variant="outline" className="h-8 flex-1 text-xs font-medium">
                         <Link to={`/nota/${transaction.id}`}>
-                          <Printer className="w-4 h-4 mr-1" />
+                          <Printer className="w-3.5 h-3.5 mr-1" />
                           Cetak
                         </Link>
                       </Button>
@@ -1009,9 +967,9 @@ const Admin = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDeleteTransaction(transaction.id)}
-                        className="w-full"
+                        className="h-8 flex-1 text-xs font-medium"
                       >
-                        <Trash2 className="w-4 h-4 mr-1" />
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
                         Hapus
                       </Button>
                     </div>
