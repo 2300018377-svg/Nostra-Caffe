@@ -86,8 +86,15 @@ export const DesktopCart = ({ onCheckout }: DesktopCartProps) => {
       setOrderType('Dine in');
       setTableNumber('');
       setOrderNotes('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Checkout error:', error);
+      toast({
+        title: 'Gagal membuat pesanan',
+        description: error?.code
+          ? `Kode error: ${error.code}. Pastikan koneksi internet stabil dan coba lagi.`
+          : (error?.message || 'Terjadi kesalahan, coba lagi dalam beberapa saat.'),
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

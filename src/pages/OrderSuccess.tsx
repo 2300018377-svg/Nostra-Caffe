@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ClipboardList, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/data/menuData';
-import { getTransactions } from '@/lib/storage';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Transaction } from '@/types/transaction';
@@ -23,13 +22,8 @@ const OrderSuccess = () => {
   useEffect(() => {
     if (!transactionId) return;
 
-    // Check local storage first
-    const localTx = getTransactions().find((item) => item.id === transactionId);
-    if (localTx) {
-      setTransaction(localTx);
-      setLoading(false);
-    }
-
+    // Ambil data HANYA dari Firestore server (bukan localStorage)
+    // agar status pesanan selalu sinkron dengan panel admin secara real-time.
     const docRef = doc(db, 'transactions', transactionId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
