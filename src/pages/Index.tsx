@@ -8,7 +8,7 @@ import { Cart } from '@/components/Cart';
 import { DesktopCart } from '@/components/DesktopCart';
 import { Footer } from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import { addTransactionAsync, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
+import { addTransaction, getMenuItems, subscribeToMenuItems, StoredMenuItem } from '@/lib/storage';
 import { CheckoutPayload, Transaction } from '@/types/transaction';
 
 const Index = () => {
@@ -40,7 +40,7 @@ const Index = () => {
     };
 
     try {
-      await addTransactionAsync(transaction);
+      addTransaction(transaction);
       toast({
         title: 'Pesanan berhasil dibuat',
         description: `Transaksi ${transaction.id} tersimpan untuk ${transaction.customerName}.`,

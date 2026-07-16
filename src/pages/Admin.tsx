@@ -43,7 +43,7 @@ import {
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const orderStatuses: OrderStatus[] = ['Menunggu', 'Diproses', 'Selesai', 'Dibatalkan'];
 const paymentStatuses: PaymentStatus[] = ['Belum bayar', 'Sudah bayar'];
@@ -148,6 +148,7 @@ const Admin = () => {
   });
   const [reportEndDate, setReportEndDate] = useState(() => toDateInputValue());
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState<{ customerName: string; id: string; totalPrice: number } | null>(null);
   const { toast } = useToast();
 
   const isInitialLoad = useRef(true);
@@ -233,9 +234,11 @@ const Admin = () => {
       setTransactions((prevTx) => {
         if (!isInitialLoad.current && nextTx.length > prevTx.length) {
           playOrderChime();
-          toast({
-            title: 'Pesanan Baru Masuk!',
-            description: `Pesanan dari ${nextTx[0].customerName} baru saja diterima.`,
+          const newOrder = nextTx[0];
+          setNewOrderAlert({
+            id: newOrder.id,
+            customerName: newOrder.customerName,
+            totalPrice: newOrder.totalPrice,
           });
         }
         return nextTx;
@@ -887,6 +890,47 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* High-Contrast Order Alert Notification */}
+      {newOrderAlert && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4 animate-slide-down">
+          <div className="bg-destructive text-destructive-foreground p-4 rounded-xl shadow-2xl flex items-center justify-between border-2 border-white/20 relative overflow-hidden">
+            {/* Pulsing light behind */}
+            <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />
+            
+            <div className="flex items-center gap-3 z-10">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center animate-bounce">
+                <ClipboardList className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-base tracking-wide animate-pulse">PESANAN BARU MASUK!</h4>
+                <p className="text-sm font-semibold opacity-95">{newOrderAlert.customerName} ({formatPrice(newOrderAlert.totalPrice)})</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-2 z-10 shrink-0">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="font-bold text-xs"
+                onClick={() => {
+                  setActiveTab('queue');
+                  setNewOrderAlert(null);
+                }}
+              >
+                Lihat
+              </Button>
+              <button
+                onClick={() => setNewOrderAlert(null)}
+                className="p-1 hover:bg-white/10 rounded-full text-white/80 hover:text-white"
+                aria-label="Tutup notifikasi"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="min-h-screen bg-background">
       <header className="border-b bg-card/80 backdrop-blur">
         <div className="container mx-auto flex flex-col gap-4 px-4 py-4 sm:py-5 md:flex-row md:items-center md:justify-between">
@@ -1430,24 +1474,18 @@ const Admin = () => {
             {chartData.length > 0 && (
               <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold leading-tight">Grafik Tren Pendapatan</h3>
-                  <p className="text-sm text-muted-foreground">Grafik tren pendapatan harian dari transaksi sukses.</p>
+                  <h3 className="text-lg font-semibold leading-tight">Grafik Pendapatan Harian</h3>
+                  <p className="text-sm text-muted-foreground">Grafik total pendapatan harian dari transaksi sukses.</p>
                 </div>
                 <div className="h-[250px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                       <XAxis dataKey="date" tickLine={false} style={{ fontSize: 12, fill: 'currentColor', opacity: 0.7 }} />
                       <YAxis tickLine={false} axisLine={false} tickFormatter={(val) => `Rp ${val}k`} style={{ fontSize: 12, fill: 'currentColor', opacity: 0.7 }} />
                       <Tooltip formatter={(value: any) => [formatPrice(Number(value)), 'Pendapatan']} contentStyle={{ background: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 8 }} />
-                      <Area type="monotone" dataKey="Pendapatan (K)" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
-                    </AreaChart>
+                      <Bar dataKey="Pendapatan (K)" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>

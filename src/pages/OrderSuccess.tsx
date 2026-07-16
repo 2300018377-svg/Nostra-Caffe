@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ClipboardList } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice } from '@/data/menuData';
 import { getTransactions } from '@/lib/storage';
@@ -79,6 +79,81 @@ const OrderSuccess = () => {
           </div>
           <h1 className="text-2xl font-bold">Pesanan Berhasil Dibuat</h1>
           <p className="text-sm text-muted-foreground">Simpan ID transaksi untuk pengecekan di kasir.</p>
+        </div>
+
+        {/* Real-time Order Status Stepper */}
+        <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground text-center">Status Pemrosesan Pesanan</h3>
+          
+          <div className="relative flex items-center justify-between px-2">
+            {/* Background line */}
+            <div className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-muted -z-0" />
+            
+            {/* Progress line */}
+            <div 
+              className="absolute left-8 right-8 top-1/2 -translate-y-1/2 h-1 bg-primary transition-all duration-500 -z-0 animate-none"
+              style={{
+                width: 
+                  transaction.orderStatus === 'Menunggu' ? '0%' :
+                  transaction.orderStatus === 'Diproses' ? '50%' :
+                  transaction.orderStatus === 'Selesai' ? '100%' : '0%'
+              }}
+            />
+
+            {/* Steppers */}
+            {/* Step 1: Menunggu */}
+            <div className="flex flex-col items-center gap-1.5 z-10">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                  transaction.orderStatus === 'Menunggu' 
+                    ? 'bg-amber-500 text-white border-amber-600 scale-110 shadow-lg shadow-amber-500/20 animate-pulse'
+                    : 'bg-primary text-primary-foreground border-primary'
+                }`}
+              >
+                <ClipboardList className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-foreground">Diterima</span>
+            </div>
+
+            {/* Step 2: Diproses */}
+            <div className="flex flex-col items-center gap-1.5 z-10">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                  transaction.orderStatus === 'Diproses'
+                    ? 'bg-blue-500 text-white border-blue-600 scale-110 shadow-lg shadow-blue-500/20 animate-none'
+                    : transaction.orderStatus === 'Selesai'
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background text-muted-foreground border-muted'
+                }`}
+              >
+                <svg className={`w-4 h-4 ${transaction.orderStatus === 'Diproses' ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <circle cx="12" cy="12" r="10" strokeDasharray="32 8" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-bold text-foreground">Diproses</span>
+            </div>
+
+            {/* Step 3: Selesai */}
+            <div className="flex flex-col items-center gap-1.5 z-10">
+              <div 
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                  transaction.orderStatus === 'Selesai'
+                    ? 'bg-emerald-500 text-white border-emerald-600 scale-110 shadow-lg shadow-emerald-500/20'
+                    : 'bg-background text-muted-foreground border-muted'
+                }`}
+              >
+                <Check className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold text-foreground">Selesai</span>
+            </div>
+          </div>
+          
+          <div className="text-center bg-muted/40 p-2.5 rounded-lg border text-xs text-muted-foreground font-semibold">
+            {transaction.orderStatus === 'Menunggu' && 'Pesanan diterima! Barista kami akan segera menyiapkan pesanan Anda.'}
+            {transaction.orderStatus === 'Diproses' && 'Pesanan Anda sedang dalam proses pembuatan/antrean kopi.'}
+            {transaction.orderStatus === 'Selesai' && 'Pesanan selesai dibuat! Silakan nikmati atau ambil di meja kasir.'}
+            {transaction.orderStatus === 'Dibatalkan' && 'Maaf, pesanan ini telah dibatalkan.'}
+          </div>
         </div>
 
         <div className="space-y-3 rounded-md bg-muted/40 p-4 text-sm">

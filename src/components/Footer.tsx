@@ -18,10 +18,10 @@ export const Footer = () => {
           </div>
 
           {/* Social Links */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3">
             <Link
               to="/admin"
-              className="rounded-full bg-white/10 px-4 py-3 text-sm font-medium hover:bg-white/20 transition-colors"
+              className="rounded-full bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"
             >
               Admin/Kasir
             </Link>
@@ -29,38 +29,42 @@ export const Footer = () => {
               href="https://wa.me/6282178695665"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"
               aria-label="WhatsApp"
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-4 h-4" />
+              <span>WhatsApp</span>
             </a>
             <a
               href="https://www.instagram.com/noka.yogyakarta"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"
               aria-label="Instagram"
             >
-              <Instagram className="w-5 h-5" />
+              <Instagram className="w-4 h-4" />
+              <span>Instagram</span>
             </a>
             <a
               href="https://shopee.co.id/universal-link/now-food/shop/22056334"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors text-[#EE4D2D]"
+              className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 px-4 py-2.5 text-sm font-medium text-[#EE4D2D] transition-colors"
               aria-label="Shopee Food"
               title="Shopee Food"
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-4 h-4" />
+              <span>Shopee Food</span>
             </a>
             <a
               href="https://maps.app.goo.gl/WUfsmMrnBJfntVkA9"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+              className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-medium hover:bg-white/20 transition-colors"
               aria-label="Lokasi"
             >
-              <MapPin className="w-5 h-5" />
+              <MapPin className="w-4 h-4" />
+              <span>Lokasi</span>
             </a>
           </div>
         </div>
